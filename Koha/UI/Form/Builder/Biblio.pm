@@ -85,27 +85,40 @@ sub generate_subfield_form {
     # based on the ApplyFrameworkDefaults setting.
     # Substitute date parts, user name
     my $applydefaults = C4::Context->preference('ApplyFrameworkDefaults');
-    if ( $value eq '' && (
-        ( $applydefaults =~ /new/ && !$self->{biblionumber} ) ||
-        ( $applydefaults =~ /duplicate/ && $op eq 'duplicate' ) ||
-        ( $applydefaults =~ /changed/ && $changed_framework ) ||
-        ( $applydefaults =~ /imported/ && $breedingid )
-    ) ) {
-        $value = $tagslib->{$tag}->{$subfield}->{defaultvalue} // q{};
+
+    my $form_mode;
+    if ( !$self->{biblionumber} ) {
+        $form_mode = 'new';
+    } elsif ( $op eq 'duplicate' ) {
+        $form_mode = 'duplicate';
+    } elsif ($changed_framework) {
+        $form_mode = 'changed';
+    } elsif ($breedingid) {
+        $form_mode = 'imported';
+    }
+
+    my ($framework_override) =
+        Koha::Plugins->call( 'framework_defaults_override', $tag, $subfield, $value, $form_mode );
+
+    if (   ( $value eq '' || $framework_override->{apply_override} )
+        && ( $applydefaults =~ /$form_mode/ ) )
+    {
+        $value = $framework_override->{override_default_value} // $tagslib->{$tag}->{$subfield}->{defaultvalue} // q{};
 
         # get today date & replace <<YYYY>>, <<YY>>, <<MM>>, <<DD>> if provided in the default value
-        my $today_dt = dt_from_string;
-        my $year = $today_dt->strftime('%Y');
+        my $today_dt  = dt_from_string;
+        my $year      = $today_dt->strftime('%Y');
         my $shortyear = $today_dt->strftime('%y');
-        my $month = $today_dt->strftime('%m');
-        my $day = $today_dt->strftime('%d');
+        my $month     = $today_dt->strftime('%m');
+        my $day       = $today_dt->strftime('%d');
         $value =~ s/<<YYYY>>/$year/g;
         $value =~ s/<<YY>>/$shortyear/g;
         $value =~ s/<<MM>>/$month/g;
         $value =~ s/<<DD>>/$day/g;
+
         # And <<USER>> with surname (?)
-        my $username=(C4::Context->userenv?C4::Context->userenv->{'surname'}:"superlibrarian");
-        $value=~s/<<USER>>/$username/g;
+        my $username = ( C4::Context->userenv ? C4::Context->userenv->{'surname'} : "superlibrarian" );
+        $value =~ s/<<USER>>/$username/g;
     }
 
     my $dbh = C4::Context->dbh;
