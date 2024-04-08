@@ -2738,6 +2738,10 @@ $star-selected: #EDB867;
     }
 }
 
+#geo_search_map {
+  height: 400px;
+}
+
 @media print {
     .br-theme-fontawesome-stars {
         .br-widget {

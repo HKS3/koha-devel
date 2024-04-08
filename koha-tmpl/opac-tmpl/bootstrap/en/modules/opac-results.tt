@@ -5,6 +5,7 @@
 [% USE To %]
 [% SET TagsShowEnabled = ( ( Koha.Preference( 'TagsEnabled' ) == 1 ) && TagsShowOnList ) %]
 [% SET TagsInputEnabled = ( ( Koha.Preference( 'opacuserlogin' ) == 1 ) && ( Koha.Preference( 'TagsEnabled' ) == 1 ) && TagsInputOnList ) %]
+[% SET GeoSearchEnabled = ( Koha.Preference( 'GeoSearchEnabled' ) == 1 ) %]
 [% SET CoverImagePlugins = KohaPlugins.get_plugins_opac_cover_images %]
 
 [% IF firstPage %]
@@ -34,6 +35,7 @@
 [% INCLUDE 'masthead.inc' %]
 
     <div class="main">
+        [% IF GeoSearchEnabled %]<div id="geo_search_map"></div>[% END %]
         [% WRAPPER breadcrumbs %]
             [% IF ( searchdesc ) %]
                 [% IF ( ReturnPath ) %]
@@ -578,7 +580,13 @@
     [% IF OpenLibraryCovers || OpenLibrarySearch %]
         [% Asset.js("js/openlibrary.js") | $raw %]
     [% END %]
+    [% IF ( GeoSearchEnabled ) %]
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.1/dist/leaflet.css" integrity="sha256-sA+zWATbFveLLNqWO2gtiw3HL/lh1giY/Inf1BJ0z14=" crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.9.1/dist/leaflet.js" integrity="sha256-NDI0K41gVbWqfkkaHj15IzU7PtMoelkzyKp8TOaFQ3s=" crossorigin=""></script>
+        [% Asset.js("js/geosearchdisplaymap.js") | $raw %]
+    [% END %]
     [% CoverImagePlugins | $raw %]
+
     <script>
         [% IF ( Koha.Preference( 'opacuserlogin' ) == 1 ) && ( Koha.Preference( 'OPACHoldRequests' ) == 1 ) %]
             function holdMultiple() {

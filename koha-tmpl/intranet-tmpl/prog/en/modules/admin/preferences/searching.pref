@@ -94,6 +94,13 @@ Searching:
                   1: Enable
                   0: Disable
             - "the option for staff with permission to create/edit custom saved search filters."
+        -
+            - pref: GeoSearchEnabled
+              type: boolean
+              choices:
+                  1: Enable
+                  0: Disable
+            - 'GeoSearch via Elasticsearch'
     Search form:
         -
             - pref: LoadSearchHistoryToTheFirstLoggedUser

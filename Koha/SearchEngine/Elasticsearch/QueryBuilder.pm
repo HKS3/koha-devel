@@ -137,6 +137,7 @@ our %index_field_convert = (
 );
 my $field_name_pattern = '[\w\-]+';
 my $multi_field_pattern = "(?:\\.$field_name_pattern)*";
+my $es_advanced_searches = [];
 
 =head2 get_index_field_convert
 
@@ -245,6 +246,8 @@ sub build_query {
         or $display_library_facets eq 'holding' ) {
         $res->{aggregations}{holdingbranch} = { terms => { field => "holdingbranch__facet", size => $size } };
     }
+
+    $res = _rebuild_to_es_advanced_query($res) if @$es_advanced_searches ;
     return $res;
 }
 
@@ -929,6 +932,12 @@ operand.
 
 sub _create_query_string {
     my ( $self, @queries ) = @_;
+    foreach my $q (@queries) {
+        if ($q->{field} && $q->{field} eq 'geolocation') {
+            push(@$es_advanced_searches, $q);
+        }
+    }
+    @queries = grep { $_->{field} ne 'geolocation' } @queries;
 
     map {
         my $otor  = $_->{operator} ? $_->{operator} . ' ' : '';
@@ -1082,7 +1091,6 @@ sub _fix_limit_special_cases {
 
     my @new_lim;
     foreach my $l (@$limits) {
-
         # This is set up by opac-search.pl
         if ( $l =~ /^yr,st-numeric,ge[=:]/ ) {
             my ( $start, $end ) =
@@ -1337,5 +1345,41 @@ sub _search_fields {
         return [map { $_->[0] } @{$search_fields}];
     }
 }
+
+sub _rebuild_to_es_advanced_query {
+    my ($res) = @_;
+    my $query_string = $res->{query}->{query_string};
+    $query_string->{query} = '*' unless $query_string->{query};
+    delete $res->{query}->{query_string};
+
+    my %filter;
+    for my $advanced_query (@$es_advanced_searches) {
+        if ( $advanced_query->{field} eq 'geolocation') {
+            my ($lat, $lon, $distance) = map { $_ =~ /:(.*)\*/ } split('\s+', $advanced_query->{operand});
+            $filter{geo_distance} = {
+                distance => $distance,
+                geolocation => {
+                    lat => $lat,
+                    lon => $lon,
+                }
+            };
+        }
+        else {
+            warn "unknown advanced ElasticSearch query: ".join(', ',%$advanced_query);
+        }
+    }
+
+    $res->{query} = {
+        bool => {
+             must => {
+                 query_string =>  $query_string
+             },
+             filter => \%filter,
+        }
+    };
+
+    return $res;
+}
+
 
 1;
