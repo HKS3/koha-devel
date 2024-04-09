@@ -932,6 +932,7 @@ operand.
 
 sub _create_query_string {
     my ( $self, @queries ) = @_;
+    $es_advanced_searches = [];
     foreach my $q (@queries) {
         if ($q->{field} && $q->{field} eq 'geolocation') {
             push(@$es_advanced_searches, $q);
