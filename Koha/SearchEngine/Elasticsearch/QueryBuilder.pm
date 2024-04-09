@@ -933,12 +933,16 @@ operand.
 sub _create_query_string {
     my ( $self, @queries ) = @_;
     $es_advanced_searches = [];
+    my @string_queries;
     foreach my $q (@queries) {
         if ($q->{field} && $q->{field} eq 'geolocation') {
             push(@$es_advanced_searches, $q);
+        } else {
+            push(@string_queries, $q)
         }
     }
-    @queries = grep { $_->{field} ne 'geolocation' } @queries;
+    
+    @queries = @string_queries;
 
     map {
         my $otor  = $_->{operator} ? $_->{operator} . ' ' : '';
