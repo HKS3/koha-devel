@@ -43,6 +43,53 @@ Cypress.Commands.add('login', (username, password) => {
 Cypress.Commands.add('left_menu_active_item_is', (label) => {
     cy.get("#navmenulist a.current:not(.disabled)").should('have.length',1).contains(label);
 })
+
+/**
+ * Builds an object based on the provided class and data.
+ *
+ * @param {string} objectClass - The class of the object to be built.
+ * @param {Object} data - The data used to build the object. If not provided, a default object will be built.
+ * @return {void} This function does not return anything.
+ */
+Cypress.Commands.add('buildObject', (objectClass, data) => {
+    if (!objectClass) return
+    if (!data) {
+        const buildCommand = `perl t/cypress/support/cypress_builder.pl --class ${objectClass}`
+        cy.exec(buildCommand)
+        return
+    }
+    const properties = Object.keys(data)
+    const buildValues = properties.map(prop => ` --data ${prop}=${data[prop]}`)
+    const buildCommand = `perl t/cypress/support/cypress_builder.pl --class ${objectClass}${buildValues.join('')}`
+    cy.exec(buildCommand)
+})
+
+const tableMappings = {
+    'Koha::Patrons': { tableName: 'borrowers', primaryKey: 'borrowernumber'}
+}
+
+/**
+ * Deletes one or more rows from a database table based on the given className and delete parameters.
+ *
+ * @param {string} className - The name of the class to delete rows from.
+ * @param {Object} deleteParameters - The parameters used to filter the rows to be deleted.
+ * @param {number} numberOfRows - The number of rows to delete. If provided, rows will be deleted in descending order up to the value of numberOfRows.
+ * @return {void} This function does not return anything.
+ */
+Cypress.Commands.add('deleteDbRow', (className, deleteParameters, numberOfRows) => {
+    if(!className) return
+    if(numberOfRows) {
+        const sql = `DELETE from ${tableMappings[className].tableName} ORDER BY ${tableMappings[className].primaryKey} DESC LIMIT ${numberOfRows}`
+        cy.query(sql);
+        return
+    }
+    const properties = Object.keys(deleteParameters)
+    const deleteFilters = properties.map(prop => `${prop}=?`)
+    const deleteValues = properties.map(prop => deleteParameters[prop])
+    const sql = `DELETE from ${tableMappings[className].tableName} WHERE ${deleteFilters.join(' AND ')}`
+    cy.query(sql, deleteValues);
+})
+
 const dayjs = require("dayjs") /* Cannot use our calendar JS code, it's in an include file (!)
                                    Also note that moment.js is deprecated */
 
