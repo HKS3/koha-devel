@@ -53,15 +53,15 @@ Cypress.Commands.add('left_menu_active_item_is', (label) => {
  */
 Cypress.Commands.add('buildObject', (objectClass, data) => {
     if (!objectClass) return
-    if (!data) {
-        const buildCommand = `perl t/cypress/support/cypress_builder.pl --class ${objectClass}`
-        cy.exec(buildCommand)
-        return
-    }
-    const properties = Object.keys(data)
-    const buildValues = properties.map(prop => ` --data ${prop}=${data[prop]}`)
-    const buildCommand = `perl t/cypress/support/cypress_builder.pl --class ${objectClass}${buildValues.join('')}`
-    cy.exec(buildCommand)
+    var buildCommand = `perl t/cypress/support/cypress_builder.pl --class ${objectClass}`
+    if (data) {
+        const properties = Object.keys(data)
+        const buildValues = properties.map(prop => ` --data ${prop}=${data[prop]}`)
+        buildCommand = `perl t/cypress/support/cypress_builder.pl --class ${objectClass}${buildValues.join('')}`
+    } 
+    cy.exec(buildCommand).then((result) => {
+       return result
+    })
 })
 
 const tableMappings = {
