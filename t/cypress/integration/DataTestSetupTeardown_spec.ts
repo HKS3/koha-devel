@@ -6,23 +6,33 @@ describe("Test data", () => {
         cy.title().should("eq", "Koha staff interface");
     });
 
-    it("should create an object based on passed data", () => {
+    // yarn cypress run --config video=false,screenshotOnRunFailure=false --spec t/cypress/integration/DataTest_spec.ts
+
+    it("should create an object based on passed data and remove it", () => {
+        var patron_count = 0;
+        cy.query("SELECT COUNT(*) as count FROM borrowers").then(result => {
+            patron_count = result[0].count;
+        });
+
         const testPatronData = {
-            firstname: "Cypress",
-            surname: "Test",
+            firstname: "CypressTest",
+            surname: "SurnameTest",
+            cardnumber: "td" + Math.floor(Math.random() * 8),
         };
-        
-        cy.exec(`perl t/cypress/support/cypress_patron.pl --setup ${patron}`);
-        cy.exec(buildCommand)
+
+        cy.buildObject("Koha::Patrons", testPatronData);
+
         cy.query(
             "SELECT firstname, surname FROM borrowers WHERE firstname=?",
-            "Cypress"
+            testPatronData.firstname
         ).then(result => {
-            expect(result[0].surname).to.equal('Test');
+            expect(result[0].surname).to.equal(testPatronData.surname);
         });
-        cy.exec(`perl t/cypress/support/cypress_patron.pl --teardown ${patron}`);
 
+        cy.buildObject("Koha::Patrons", testPatronData, "teardown");
+
+        cy.query("SELECT COUNT(*) as count FROM borrowers").then(result => {
+            expect(result[0].count).to.equal(patron_count);
+        });
     });
-
-   
 });

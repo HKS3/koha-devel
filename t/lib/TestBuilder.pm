@@ -54,7 +54,7 @@ sub delete {
     foreach my $rec ( @recs ) {
     # delete only works when you supply full primary key values
     # $cond does not include searches for undef (not allowed in PK)
-        my $cond = { map { defined $rec->{$_}? ($_, $rec->{$_}): (); } @pk };
+        my $cond = { map { defined $rec->$_? ($_, $rec->$_): (); } @pk };
         next if keys %$cond < @pk;
         $self->schema->resultset( $source )->search( $cond )->delete;
         # we clear the pk columns in the supplied hash

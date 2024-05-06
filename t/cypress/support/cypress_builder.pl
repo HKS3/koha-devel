@@ -22,12 +22,36 @@ use Koha::Database;
 use t::lib::TestBuilder;
 use JSON qw( decode_json );
 use Getopt::Long;
+use Koha::Patrons;
+use Koha::Libraries;
 
 my %data;
 my $class;
+my $teardown;
 
-GetOptions( "data=s" => \%data, "class=s" => \$class );
+GetOptions( "data=s" => \%data, "class=s" => \$class, "teardown" => \$teardown);
 
 my $builder = t::lib::TestBuilder->new;
 
-my $koha_object = $builder->build_object({ class => $class, value => \%data });
+my $objects = {
+    "Koha::Patrons" => { id => 'cardnumber', teardown => 'patron_delete', source => 'Borrower'},
+};
+
+die unless $data{$objects->{$class}->{id}};
+
+if ($teardown) {
+    my $sub = $objects->{$class}->{teardown};
+    no strict 'refs';
+    &$sub($data{$objects->{$class}->{id}});
+} else {
+    my $koha_object = $builder->build_object({ class => $class, value => \%data });
+}
+
+sub patron_delete {
+    my $id = shift;
+    my $patron = Koha::Patrons->find( {cardnumber => $id });
+    my $branch = Koha::Libraries->find( {branchcode => $patron->branchcode });
+   
+    $builder->delete({ source => 'Borrower',  records => $patron});
+    $builder->delete({ source => 'Branch',  records => $branch});   
+}

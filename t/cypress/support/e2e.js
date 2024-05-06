@@ -51,14 +51,17 @@ Cypress.Commands.add('left_menu_active_item_is', (label) => {
  * @param {Object} data - The data used to build the object. If not provided, a default object will be built.
  * @return {void} This function does not return anything.
  */
-Cypress.Commands.add('buildObject', (objectClass, data) => {
+Cypress.Commands.add('buildObject', (objectClass, data, teardown = '') => {
     if (!objectClass) return
     var buildCommand = `perl t/cypress/support/cypress_builder.pl --class ${objectClass}`
     if (data) {
         const properties = Object.keys(data)
         const buildValues = properties.map(prop => ` --data ${prop}=${data[prop]}`)
         buildCommand = `perl t/cypress/support/cypress_builder.pl --class ${objectClass}${buildValues.join('')}`
-    } 
+    }
+    if (teardown == 'teardown') {
+        buildCommand += ` --teardown`
+    }
     cy.exec(buildCommand).then((result) => {
        return result
     })
