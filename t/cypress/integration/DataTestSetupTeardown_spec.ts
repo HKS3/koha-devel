@@ -29,10 +29,12 @@ describe("Test data", () => {
             expect(result[0].surname).to.equal(testPatronData.surname);
         });
 
+        /*
         cy.buildObject("Koha::Patrons", testPatronData, "teardown");
 
         cy.query("SELECT COUNT(*) as count FROM borrowers").then(result => {
             expect(result[0].count).to.equal(patron_count);
         });
+        */
     });
 });

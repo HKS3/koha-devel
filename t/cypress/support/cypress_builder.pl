@@ -24,17 +24,30 @@ use JSON qw( decode_json );
 use Getopt::Long;
 use Koha::Patrons;
 use Koha::Libraries;
+use Koha::Patron::Category;
 
 my %data;
 my $class;
 my $teardown;
+
+=head1 DESCRIPTION
+
+creates/deletes Koha Objects via command line, for each object to create an id has to be provided
+
+create:
+perl t/cypress/support/cypress_builder.pl  --class Koha::Patrons --data cardnumber=999 --data firstname=Mark
+
+teardown:
+perl t/cypress/support/cypress_builder.pl  --class Koha::Patrons --data cardnumber=999 --data firstname=Mark --teardown
+
+=cut
 
 GetOptions( "data=s" => \%data, "class=s" => \$class, "teardown" => \$teardown);
 
 my $builder = t::lib::TestBuilder->new;
 
 my $objects = {
-    "Koha::Patrons" => { id => 'cardnumber', teardown => 'patron_delete', source => 'Borrower'},
+    "Koha::Patrons" => { id => 'cardnumber', teardown => 'patron_delete',},
 };
 
 die unless $data{$objects->{$class}->{id}};
@@ -54,4 +67,5 @@ sub patron_delete {
    
     $builder->delete({ source => 'Borrower',  records => $patron});
     $builder->delete({ source => 'Branch',  records => $branch});   
+    $builder->delete({ source => 'Category',  records => $patron->category});   
 }
